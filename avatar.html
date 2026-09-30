@@ -38,12 +38,13 @@
   /* Escenario del avatar */
   .body { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
   .stage { flex: 1; min-height: 0; position: relative; display: flex; align-items: flex-end; justify-content: center; }
-  .avatar { position: relative; height: 100%; max-height: 100%; aspect-ratio: 828 / 900; max-width: 92vw; transform-origin: 50% 100%; animation: respira 4.5s ease-in-out infinite; }
+  .avatar { position: relative; height: min(100%, calc(92vw * 900 / 828)); width: auto; aspect-ratio: 828 / 900; flex: none; transform-origin: 50% 100%; animation: respira 4.5s ease-in-out infinite; }
   .avatar img { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 18px 24px rgba(40,20,5,.35)); user-select: none; -webkit-user-drag: none; }
   .avatar::before { content: ''; position: absolute; left: 22%; right: 22%; bottom: -1%; height: 5%; border-radius: 50%; background: radial-gradient(rgba(40,20,5,.45), transparent 70%); z-index: -1; }
   .avatar.habla { animation: respira 4.5s ease-in-out infinite, habla 1.6s ease-in-out infinite; }
   @keyframes respira { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-.6%) scale(1.004); } }
   @keyframes habla { 0%, 100% { rotate: 0deg; } 30% { rotate: -.8deg; } 70% { rotate: .8deg; } }
+  .avatar:not(.listo) .mouth { visibility: hidden; }
   .mouth { position: absolute; left: calc(47.55% - 3.9%); top: 39.9%; width: 7.8%; overflow: visible; }
 
   /* Pantalla de espera */
@@ -98,6 +99,14 @@
   .ctl.mic { background: var(--blue); border-color: transparent; }
   .ctl.mic.off { background: var(--red); }
   .ctl.on { background: rgba(94,224,230,.22); border-color: var(--cyan-2); }
+  .ctl.colgar { background: var(--red); border-color: transparent; }
+  .ctl.colgar:hover { background: #A11F17; }
+  .modal .col { display: flex; flex-direction: column; gap: 8px; }
+  .modal .res { text-align: left; background: #F2F6FA; border-radius: 12px; padding: 10px 12px; margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: var(--ink-2); max-height: 180px; overflow-y: auto; }
+  .modal .motivo { color: #B42318; font-size: 13.5px; margin: -6px 0 12px; display: none; }
+  .modal .motivo.show { display: block; }
+  .modal button.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+  @media (max-width: 400px) { .bar { gap: 6px; padding: 6px; } .ctl { width: 44px; height: 44px; } }
   .voz { flex: 1; min-width: 0; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 14px; font-weight: 700; font-size: calc(13.5px * var(--s)); transition: background .25s, color .25s; background: rgba(255,255,255,.12); color: #DCE3EA; }
   .voz .txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .voz.escucha { background: var(--cyan); color: var(--navy); }
@@ -138,7 +147,7 @@
   @media (orientation: landscape) and (min-width: 760px) {
     .body { flex-direction: row; }
     .stage { flex: 1.15; }
-    .avatar { height: 96%; }
+    .avatar { height: min(96%, calc(92vw * 900 / 828)); }
     .app.en-charla .stage { flex: 1; }
     .talk { width: min(46vw, 560px); justify-content: flex-end; padding: 0 22px 18px 0; overflow-y: auto; }
     .pedido { max-height: none; }
@@ -154,7 +163,7 @@
     .app.en-charla .stage { min-height: 46vh; }
   }
   /* Celulares bajos */
-  @media (max-width: 440px) { .voz { justify-content: flex-start; padding: 0 12px; } .voz .txt { white-space: normal; line-height: 1.15; font-size: 12.5px; } }
+  @media (max-width: 440px) { .voz { justify-content: flex-start; padding: 0 12px; } .voz .txt { white-space: normal; line-height: 1.15; font-size: 11.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } }
   @media (max-height: 640px) { .welcome h1 { font-size: 30px; } .hint { display: none; } }
 
   /* Modo TV: letra más grande y sin controles táctiles */
@@ -174,7 +183,7 @@
   <div class="body">
     <div class="stage">
       <div class="avatar" id="avatar">
-        <img src="img/nattalia.png" alt="Nattalia, la humana digital de NTT DATA">
+        <img id="avatar-img" src="img/nattalia.png" alt="Nattalia, la humana digital de NTT DATA">
         <svg class="mouth" viewBox="0 0 100 70" aria-hidden="true">
           <defs><clipPath id="boca-clip"><path id="boca-clip-path" d=""/></clipPath></defs>
           <path id="boca" d="" fill="#5B1A16"/>
@@ -196,7 +205,7 @@
         <div class="err" id="err"></div>
         <div class="hint">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5EE0E6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>
-          <span>Ten a la mano tu número de turno. Nattalia te lo va a pedir.</span>
+          <span>Dile tu nombre a Nattalia: así encuentra tu lugar en la cola.</span>
         </div>
       </div>
     </div>
@@ -230,6 +239,9 @@
         <button class="ctl" id="btn-escribir" type="button" aria-label="Ver conversación">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
         </button>
+        <button class="ctl colgar" id="btn-colgar" type="button" aria-label="Colgar y terminar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 9c-3.1 0-6 .6-8.4 1.8-.8.4-1.3 1.2-1.3 2.1v2.4c0 .8.8 1.4 1.6 1.2l3.3-.8c.6-.2 1.1-.7 1.1-1.4v-1.7c1.1-.4 2.4-.6 3.7-.6s2.6.2 3.7.6v1.7c0 .7.5 1.2 1.1 1.4l3.3.8c.8.2 1.6-.4 1.6-1.2v-2.4c0-.9-.5-1.7-1.3-2.1C18 9.6 15.1 9 12 9z"/></svg>
+        </button>
         <button class="ctl" id="btn-reset" type="button" aria-label="Reiniciar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/></svg>
         </button>
@@ -252,6 +264,20 @@
     <h3>¿Reiniciar la conversación?</h3>
     <p>Se cierra la sesión con Nattalia y se pierde el pedido que no se haya registrado.</p>
     <div class="row"><button type="button" id="m-no">Seguir</button><button type="button" class="si" id="m-si">Reiniciar</button></div>
+  </div>
+</div>
+
+<div class="modal" id="modal-colgar" role="dialog" aria-modal="true">
+  <div>
+    <h3 id="mc-titulo">¿Registrar el pedido y terminar?</h3>
+    <p id="mc-texto">Este es el pedido que Nattalia anotó:</p>
+    <div class="res" id="mc-res"></div>
+    <div class="motivo" id="mc-motivo"></div>
+    <div class="col">
+      <button type="button" class="ok" id="mc-registrar">Registrar pedido y colgar</button>
+      <button type="button" class="si" id="mc-colgar">Colgar sin registrar</button>
+      <button type="button" id="mc-seguir">Seguir conversando</button>
+    </div>
   </div>
 </div>
 
@@ -290,9 +316,9 @@ const pad = n => String(n).padStart(2, '0');
 async function consultarLlamados() {
   try {
     const r = await api('/movil');
-    const l = r.llamados || [];
+    const l = r.llamando || [];
     if (estado === 'espera') {
-      if (l.length) { $('chip').classList.remove('hidden', 'min'); $('chip-lbl').textContent = l.length > 1 ? 'TURNOS LLAMADOS' : 'TURNO LLAMADO'; $('chip-num').textContent = l.slice(0, 2).map(pad).join(' · '); }
+      if (l.length) { $('chip').classList.remove('hidden', 'min'); $('chip-lbl').textContent = 'ES EL TURNO DE'; $('chip-num').textContent = l.slice(0, 2).join(' · '); }
       else $('chip').classList.add('hidden');
     }
   } catch (e) {}
@@ -396,14 +422,14 @@ function mostrarPedido(p) {
   });
   const personas = new Set(items.map(it => K(it.para_nombre || it.para || p.nombre))).size;
   const turno = Number(String(p.numero_turno || '').replace(/\D/g, '')) || 0;
-  $('ped-turno').textContent = turno ? 'TU PEDIDO · TURNO ' + pad(turno) : 'TU PEDIDO';
+  $('ped-turno').textContent = 'TU PEDIDO';
   $('ped-nombre').textContent = 'A nombre de ' + (S(p.nombre) || '…');
   $('ped-cnt').textContent = personas ? personas + ' de ' + catalogo.maxPersonas + ' personas' : '';
-  $('ok-sub').textContent = (turno ? 'Turno ' + pad(turno) + ' · ' : '') + 'a nombre de ' + S(p.nombre);
+  $('ok-sub').textContent = 'A nombre de ' + S(p.nombre);
   const confirmado = p.confirmado === true || String(p.confirmado).toLowerCase() === 'true';
   $('pedido').classList.toggle('ok', confirmado);
   $('pedido').classList.toggle('show', items.length > 0);
-  if (turno) { $('chip').classList.remove('hidden'); $('chip').classList.add('min'); $('chip-lbl').textContent = ''; $('chip-num').textContent = 'Turno ' + pad(turno); }
+  if (S(p.nombre)) { $('chip').classList.remove('hidden'); $('chip').classList.add('min'); $('chip-lbl').textContent = ''; $('chip-num').textContent = 'Pedido de ' + S(p.nombre).split(/\s+/)[0]; }
 }
 
 /* ---------- Sesión con ElevenLabs ---------- */
@@ -509,10 +535,77 @@ $('form-escribir').addEventListener('submit', e => {
   $('txt-escribir').value = '';
 });
 $('btn-reset').addEventListener('click', () => $('modal').classList.add('show'));
+
+/* ---------- Colgar: registra el pedido pendiente y termina la llamada ---------- */
+function resumenTexto(p) {
+  return (p.items || []).map(it => {
+    const prod = nombreProducto(S(it.producto_id || it.producto)).nombre;
+    const lid = S(it.leche_id || it.leche);
+    const leche = lid && lid !== 'sin_leche' ? nombreLeche(lid) : null;
+    return (S(it.para_nombre || it.para) || S(p.nombre)) + ': ' + prod + (leche ? ' con leche ' + S(leche.nombre).toLowerCase() : '');
+  }).join('<br>');
+}
+async function colgar(registrar) {
+  const c = conv;
+  if (registrar && pedido && (pedido.items || []).length) {
+    const b = $('mc-registrar');
+    b.disabled = true; b.textContent = 'Registrando…';
+    $('mc-motivo').classList.remove('show');
+    try {
+      const r = await api('/pedido', { method: 'POST', body: { nombre: S(pedido.nombre), numero_turno: pedido.numero_turno || '', items: pedido.items, restricciones: S(pedido.restricciones), notas: S(pedido.notas), conversation_id: c && c.getId ? c.getId() : '' } });
+      if (!r.ok) { $('mc-motivo').textContent = (r.motivo || 'No se pudo registrar.') + ' Puedes seguir conversando con Nattalia para corregirlo.'; $('mc-motivo').classList.add('show'); b.disabled = false; b.textContent = 'Registrar pedido y colgar'; return; }
+      mostrarPedido(Object.assign({}, pedido, { confirmado: true }));
+    } catch (e) {
+      $('mc-motivo').textContent = 'No hay conexión con el sistema. Intenta de nuevo o pide al anfitrión que lo registre en la barra.'; $('mc-motivo').classList.add('show'); b.disabled = false; b.textContent = 'Registrar pedido y colgar'; return;
+    }
+    b.disabled = false; b.textContent = 'Registrar pedido y colgar';
+  }
+  $('modal-colgar').classList.remove('show');
+  conv = null;
+  try { if (c) await c.endSession(); } catch (e) {}
+  terminar();
+}
+$('btn-colgar').addEventListener('click', () => {
+  const pendiente = pedido && (pedido.items || []).length && !(pedido.confirmado === true || String(pedido.confirmado) === 'true');
+  if (!pendiente) { colgar(false); return; }
+  $('mc-res').innerHTML = resumenTexto(pedido);
+  $('mc-motivo').classList.remove('show');
+  $('modal-colgar').classList.add('show');
+});
+$('mc-registrar').addEventListener('click', () => colgar(true));
+$('mc-colgar').addEventListener('click', () => colgar(false));
+$('mc-seguir').addEventListener('click', () => $('modal-colgar').classList.remove('show'));
 $('m-no').addEventListener('click', () => $('modal').classList.remove('show'));
 $('m-si').addEventListener('click', () => { $('modal').classList.remove('show'); reiniciar(); });
 document.addEventListener('keydown', e => { if (estado === 'espera' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); iniciar(); } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && estado === 'espera') consultarLlamados(); });
+
+
+/* ---------- Imágenes: funcionan tanto en img/ como en la raíz del repo ---------- */
+(function () {
+  const img = $('avatar-img');
+  const listo = () => avatarEl.classList.add('listo');
+  img.addEventListener('load', listo);
+  img.addEventListener('error', () => { if (!img.dataset.alt) { img.dataset.alt = '1'; img.src = 'nattalia.png'; } });
+  if (img.complete && img.naturalWidth) listo();
+  const probar = (rutas, ok) => { if (!rutas.length) return; const t = new Image(); t.onload = () => ok(rutas[0]); t.onerror = () => probar(rutas.slice(1), ok); t.src = rutas[0]; };
+  probar(['img/cafeteria.jpg', 'cafeteria.jpg'], r => { document.querySelector('.scene').style.backgroundImage = "url('" + r + "')"; });
+})();
+
+/* ---------- En vertical: subir a Nattalia para que la bienvenida no le tape la cara ---------- */
+function ajustarEscenario() {
+  const st = document.querySelector('.stage'), w = $('welcome');
+  st.style.paddingBottom = '';
+  const vertical = window.innerHeight > window.innerWidth;
+  if (!vertical || $('app').classList.contains('en-charla') || !w.offsetHeight) return;
+  const S = st.clientHeight, W = w.offsetHeight, Aw = window.innerWidth * 0.92 * 900 / 828;
+  let P = Math.max(0, W - 0.45 * Aw);
+  if (S - P < Aw) P = Math.max(0, (W - 0.45 * S) / 0.55);
+  st.style.paddingBottom = Math.min(P, S * 0.6) + 'px';
+}
+window.addEventListener('resize', ajustarEscenario);
+new MutationObserver(ajustarEscenario).observe($('app'), { attributes: true, attributeFilter: ['class'] });
+ajustarEscenario();
 
 cargarCatalogo();
 iniciarSondeo();

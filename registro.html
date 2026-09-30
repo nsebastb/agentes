@@ -164,9 +164,9 @@
     <div class="como">
       <h3>Cómo funciona</h3>
       <ol>
-        <li><b>1</b><span>Te registras aquí y recibes tu número de turno.</span></li>
+        <li><b>1</b><span>Te registras aquí y ves tu número en la cola.</span></li>
         <li><b>2</b><span>Te avisamos por WhatsApp cuando falte poco y cuando sea tu turno.</span></li>
-        <li><b>3</b><span>Le pides tu bebida a Nattalia y la recoges en la barra.</span></li>
+        <li><b>3</b><span>Le dices tu nombre a Nattalia, pides tu bebida y la recoges en la barra.</span></li>
       </ol>
     </div>
     <div class="note">
@@ -181,7 +181,7 @@
     <div class="card ticket" id="ticket">
       <div class="badge-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
       <h2 id="t-saludo">¡Hola! Ya estás en la cola</h2>
-      <div class="num-lbl">TU NÚMERO DE TURNO</div>
+      <div class="num-lbl" id="t-lbl">TU NÚMERO EN LA COLA</div>
       <div class="num" id="t-num">--</div>
       <div class="pill" id="t-pill"><span class="dot"></span><span id="t-estado">Consultando tu turno…</span></div>
     </div>
@@ -201,7 +201,7 @@
 
     <div class="tip">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5EE0E6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
-      <span>Ten a la mano tu número de turno. Nattalia te lo va a pedir. Si vienes con amigos, pidan juntos en tu turno (máximo 4 personas).</span>
+      <span>Cuando llegues, dile tu nombre a Nattalia. Si vienes con amigos, pidan juntos en tu turno (máximo 4 personas).</span>
     </div>
     <div class="sync" id="sync"></div>
     <button class="btn ghost" id="btn-otro" type="button">Registrar a otra persona</button>
@@ -268,7 +268,10 @@
   function pintar(t) {
     const n = primerNombre(t.nombre || registro.nombre);
     $('t-saludo').textContent = '¡Hola, ' + n + '! Ya estás en la cola';
-    $('t-num').textContent = pad(t.numero_turno || registro.numero_turno);
+    const posi = t.posicion || (t.personas_antes != null ? t.personas_antes + 1 : null);
+    $('t-num').textContent = posi ? pad(posi) : '--';
+    $('t-lbl').textContent = 'TU NÚMERO EN LA COLA';
+    $('t-num').classList.remove('hidden'); $('t-lbl').classList.remove('hidden');
     const pill = $('t-pill');
     pill.className = 'pill';
     $('ticket').classList.remove('turno');
@@ -278,7 +281,8 @@
       const a = t.personas_antes;
       texto = a === 0 ? 'Eres el siguiente' : (a === 1 ? 'Hay 1 persona antes que tú' : 'Hay ' + a + ' personas antes que tú');
     } else if (estado === 'llamado') {
-      texto = '¡Es tu turno! Acércate a Nattalia'; pill.classList.add('turno'); $('ticket').classList.add('turno');
+      texto = 'Acércate a Nattalia y dile tu nombre'; pill.classList.add('turno'); $('ticket').classList.add('turno');
+      $('t-num').textContent = '¡YA!'; $('t-lbl').textContent = 'ES TU TURNO';
       $('t-saludo').textContent = '¡' + n + ', es tu turno!';
     } else if (estado === 'en_atencion') {
       texto = 'Estás con Nattalia'; pill.classList.add('fin');
@@ -287,9 +291,11 @@
       texto = pe === 'entregado' ? 'Pedido entregado. ¡Disfrútalo!' : (pe === 'en_preparacion' ? 'Tu café se está preparando' : 'Pedido registrado: recógelo en la barra');
       pill.classList.add('fin');
       $('t-saludo').textContent = '¡Gracias, ' + n + '!';
+      $('t-num').classList.add('hidden'); $('t-lbl').classList.add('hidden');
       if (pe === 'entregado') terminado = true;
     } else if (estado === 'no_asistio') {
-      texto = 'Te llamamos y no te encontramos'; pill.classList.add('off'); terminado = true;
+      texto = 'Te llamamos y no te encontramos. Regístrate de nuevo si aún quieres tu café.'; pill.classList.add('off'); terminado = true;
+      $('t-num').classList.add('hidden'); $('t-lbl').classList.add('hidden');
     } else {
       texto = t.estado_texto || estado;
     }
@@ -323,7 +329,7 @@
     const w = String(registro.whatsapp || '');
     $('wa-num-txt').textContent = 'Te avisaremos al WhatsApp +' + w.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
     if (enIframe) window.parent.postMessage({ tipo: 'registrado', tel: w, nombre: registro.nombre }, '*');
-    pintar({ numero_turno: registro.numero_turno, nombre: registro.nombre, estado: 'en_espera', personas_antes: registro.personas_antes });
+    pintar({ numero_turno: registro.numero_turno, nombre: registro.nombre, estado: 'en_espera', posicion: registro.posicion, personas_antes: registro.personas_antes });
     consultar().then(programar);
   }
 
