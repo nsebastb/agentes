@@ -1,0 +1,107 @@
+{
+  "_instrucciones": "Crea cada herramienta en ElevenLabs > Agents > Nattalia (agent_3701m3qvcenyfgc9nrgsb6vbnt7m) > Tools > Add tool > Edit as JSON, pegando el objeto de 'tool_config'. Antes crea en ElevenLabs > Secrets un secreto llamado nattalia_token con el mismo valor que la credencial Header Auth de n8n, y reemplaza SECRET_ID_NATTALIA_TOKEN por su id (o elígelo desde la UI en Headers > Secret). end_call se activa en System tools, no se pega.",
+  "tools": [
+    {
+      "tool_config": {
+        "type": "webhook",
+        "name": "consultar_catalogo",
+        "description": "Devuelve los productos y opciones de leche disponibles hoy, con su estado de agotado y los límites de bebidas. Úsala al inicio de la conversación y antes de recomendar. Solo ofrece lo que aparezca aquí y que no esté agotado.",
+        "response_timeout_secs": 15,
+        "api_schema": {
+          "url": "https://kvillaco.app.n8n.cloud/webhook/nattalia/catalogo",
+          "method": "GET",
+          "request_headers": {
+            "x-nattalia-token": { "secret_id": "SECRET_ID_NATTALIA_TOKEN" }
+          }
+        }
+      }
+    },
+    {
+      "tool_config": {
+        "type": "webhook",
+        "name": "registrar_pedido",
+        "description": "Registra el pedido confirmado del turno, con todas las personas del grupo, y lo envía al gestor de pedidos del barista. Úsala solo después de que la persona diga sí al resumen. Si responde ok false, lee el motivo, corrige con la persona y vuelve a confirmar; si no se puede resolver, pide que se acerquen a la barra.",
+        "response_timeout_secs": 20,
+        "api_schema": {
+          "url": "https://kvillaco.app.n8n.cloud/webhook/nattalia/pedido",
+          "method": "POST",
+          "request_headers": {
+            "x-nattalia-token": { "secret_id": "SECRET_ID_NATTALIA_TOKEN" }
+          },
+          "request_body_schema": {
+            "type": "object",
+            "description": "Pedido completo del turno",
+            "required": ["nombre", "numero_turno", "items"],
+            "properties": {
+              "nombre": {
+                "type": "string",
+                "description": "Nombre de quien se registró en la cola. El pedido se entrega a su nombre."
+              },
+              "numero_turno": {
+                "type": "integer",
+                "description": "Número de turno que la persona recibió al registrarse, solo el número (por ejemplo 6)."
+              },
+              "items": {
+                "type": "array",
+                "description": "Una entrada por bebida del turno. Máximo 3 por persona y 6 por turno.",
+                "items": {
+                  "type": "object",
+                  "description": "Una bebida",
+                  "required": ["para_nombre", "producto_id", "leche_id"],
+                  "properties": {
+                    "para_nombre": { "type": "string", "description": "Nombre de la persona que pidió esta bebida." },
+                    "producto_id": { "type": "string", "description": "El id del producto tal como viene en consultar_catalogo (por ejemplo latte, americano, manzanilla)." },
+                    "leche_id": { "type": "string", "description": "El id de la leche de consultar_catalogo (por ejemplo deslactosada). Usa sin_leche si el producto no lleva leche o es una infusión." }
+                  }
+                }
+              },
+              "restricciones": {
+                "type": "string",
+                "description": "Intolerancias o alergias, indicando de quién (por ejemplo Luis: sin lactosa). Vacío si no hay."
+              },
+              "notas": {
+                "type": "string",
+                "description": "Pedidos especiales como más caliente o poca espuma. Vacío si no hay."
+              },
+              "conversation_id": {
+                "type": "string",
+                "description": "Id de la conversación",
+                "dynamic_variable": "system__conversation_id"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "tool_config": {
+        "type": "client",
+        "name": "mostrar_pedido",
+        "description": "Muestra en la pantalla el resumen del pedido por persona. Úsala cada vez que el pedido cambie: al anotar, corregir o quitar una bebida.",
+        "expects_response": false,
+        "parameters": {
+          "type": "object",
+          "required": ["nombre", "items"],
+          "properties": {
+            "nombre": { "type": "string", "description": "Nombre de quien se registró." },
+            "numero_turno": { "type": "integer", "description": "Número de turno, si ya lo sabes." },
+            "items": {
+              "type": "array",
+              "description": "Bebidas anotadas hasta ahora.",
+              "items": {
+                "type": "object",
+                "description": "Una bebida",
+                "properties": {
+                  "para_nombre": { "type": "string", "description": "Quién la pidió." },
+                  "producto_id": { "type": "string", "description": "Id del producto del catálogo." },
+                  "leche_id": { "type": "string", "description": "Id de la leche o sin_leche." }
+                }
+              }
+            },
+            "restricciones": { "type": "string", "description": "Intolerancias anotadas, con el nombre de la persona." }
+          }
+        }
+      }
+    }
+  ]
+}
