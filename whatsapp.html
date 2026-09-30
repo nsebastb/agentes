@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F0F2F5">
+<title>WhatsApp (simulado) · Café NTT DATA</title>
+<style>
+  :root {
+    --wa-green: #00A884; --wa-dark: #008069; --wa-bg: #EFEAE2; --bubble-out: #D9FDD3; --bubble-in: #FFFFFF;
+    --ink: #111B21; --ink-2: #54656F; --ink-3: #667781; --tick: #53BDEB; --bar: #F0F2F5;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: var(--ink); background: #D1D7DB; -webkit-font-smoothing: antialiased; }
+  .phone { height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; background: var(--wa-bg); position: relative; overflow: hidden; }
+
+  /* Barra de estado del teléfono */
+  .status { height: 30px; flex-shrink: 0; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 13px; font-weight: 600; }
+  .status .icons { display: flex; gap: 6px; align-items: center; }
+
+  /* Cabecera del chat */
+  .chat-head { height: 60px; flex-shrink: 0; background: #fff; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 4px; border-bottom: 1px solid #E9EDEF; }
+  .icon-btn { width: 40px; height: 40px; border: 0; background: transparent; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--ink-2); flex-shrink: 0; }
+  .icon-btn:hover { background: rgba(0,0,0,.05); }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: #0072BC; display: grid; place-items: center; flex-shrink: 0; }
+  .who { flex: 1; min-width: 0; line-height: 1.2; }
+  .who .name { font-size: 16.5px; font-weight: 600; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .who .sub { font-size: 13px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .who .sub.typing { color: var(--wa-green); }
+
+  /* Conversación */
+  .chat { flex: 1; overflow-y: auto; padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 3px;
+    background-color: var(--wa-bg);
+    background-image: radial-gradient(rgba(0,0,0,.035) 1.2px, transparent 1.2px), radial-gradient(rgba(0,0,0,.025) 1px, transparent 1px);
+    background-size: 22px 22px, 34px 34px; background-position: 0 0, 11px 17px; }
+  .sys { align-self: center; max-width: 88%; text-align: center; font-size: 12.5px; line-height: 1.4; color: #54656F; background: #FFF5C4; border-radius: 8px; padding: 6px 10px; margin: 6px 0 8px; box-shadow: 0 1px .5px rgba(11,20,26,.13); }
+  .day { align-self: center; font-size: 12.5px; color: var(--ink-2); background: #fff; border-radius: 8px; padding: 5px 12px; margin: 8px 0; box-shadow: 0 1px .5px rgba(11,20,26,.13); text-transform: uppercase; }
+  .biz-card { align-self: center; width: 88%; background: #fff; border-radius: 10px; padding: 16px; text-align: center; margin: 6px 0 4px; box-shadow: 0 1px .5px rgba(11,20,26,.13); }
+  .biz-card .avatar { width: 64px; height: 64px; margin: 0 auto 8px; }
+  .biz-card b { display: block; font-size: 16px; }
+  .biz-card span { font-size: 13px; color: var(--ink-3); }
+  .msg { max-width: 82%; padding: 6px 8px 8px 9px; border-radius: 8px; font-size: 14.6px; line-height: 1.36; position: relative; box-shadow: 0 1px .5px rgba(11,20,26,.13); word-wrap: break-word; white-space: pre-wrap; }
+  .msg.in { align-self: flex-start; background: var(--bubble-in); border-top-left-radius: 0; }
+  .msg.out { align-self: flex-end; background: var(--bubble-out); border-top-right-radius: 0; }
+  .msg.in.first::before, .msg.out.first::before { content: ''; position: absolute; top: 0; width: 8px; height: 13px; }
+  .msg.in.first::before { left: -8px; background: linear-gradient(to bottom left, var(--bubble-in) 50%, transparent 50%); }
+  .msg.out.first::before { right: -8px; background: linear-gradient(to bottom right, var(--bubble-out) 50%, transparent 50%); }
+  .msg.in:not(.first) { border-top-left-radius: 8px; }
+  .msg.out:not(.first) { border-top-right-radius: 8px; }
+  .msg.first { margin-top: 6px; }
+  .meta { float: right; margin: 6px 0 -4px 10px; font-size: 11px; color: var(--ink-3); display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .msg.nuevo { animation: entra .35s ease-out; }
+  @keyframes entra { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+
+  /* Barra inferior (solo avisos) */
+  .solo-avisos { flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 16px 18px; background: var(--bar); font-size: 13px; color: var(--ink-3); text-align: center; border-top: 1px solid #E9EDEF; }
+
+  /* Notificación push */
+  .push { position: absolute; top: 36px; left: 8px; right: 8px; background: rgba(250,250,250,.97); border-radius: 18px; padding: 11px 13px; display: flex; gap: 11px; align-items: flex-start; box-shadow: 0 8px 28px rgba(0,0,0,.22); transform: translateY(-140%); transition: transform .35s cubic-bezier(.2,.9,.3,1.1); z-index: 20; cursor: pointer; backdrop-filter: blur(12px); }
+  .push.show { transform: translateY(0); }
+  .push .app { width: 38px; height: 38px; border-radius: 9px; background: #25D366; display: grid; place-items: center; flex-shrink: 0; }
+  .push .txt { flex: 1; min-width: 0; font-size: 14px; line-height: 1.3; }
+  .push .top { display: flex; justify-content: space-between; font-size: 12.5px; color: #6B7280; margin-bottom: 2px; }
+  .push .top b { color: #111; font-size: 14px; }
+  .push .body { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .push.turno { background: #fff; outline: 2px solid #25D366; }
+
+  /* Pantalla de inicio (sin número) */
+  .setup { position: absolute; inset: 0; background: #fff; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 28px; text-align: center; }
+  .setup h2 { margin: 0; font-size: 20px; }
+  .setup p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+  .setup .row { display: flex; gap: 8px; width: 100%; max-width: 320px; }
+  .setup select, .setup input { height: 46px; border: 1.5px solid #D1D7DB; border-radius: 10px; font: inherit; font-size: 16px; padding: 0 10px; }
+  .setup select { width: 104px; }
+  .setup input { flex: 1; min-width: 0; }
+  .setup button { height: 46px; width: 100%; max-width: 320px; border: 0; border-radius: 23px; background: var(--wa-dark); color: #fff; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .setup .err { color: #B42318; font-size: 13px; min-height: 18px; }
+  .demo-tag { align-self: center; font-size: 11px; color: var(--ink-3); background: rgba(255,255,255,.75); border-radius: 10px; padding: 3px 9px; margin-top: 2px; }
+  .offline { position: absolute; top: 96px; left: 50%; transform: translateX(-50%); background: #FDECEA; color: #B42318; font-size: 12px; border-radius: 12px; padding: 4px 10px; z-index: 10; display: none; }
+  .offline.show { display: block; }
+  .menu { position: absolute; top: 88px; right: 10px; background: #fff; border-radius: 10px; box-shadow: 0 6px 22px rgba(0,0,0,.18); z-index: 25; display: none; min-width: 190px; overflow: hidden; }
+  .menu.show { display: block; }
+  .menu button { display: block; width: 100%; text-align: left; border: 0; background: #fff; padding: 13px 16px; font: inherit; font-size: 14.5px; cursor: pointer; }
+  .menu button:hover { background: #F5F6F6; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span id="hora">10:24</span><span class="icons">
+    <svg width="17" height="11" viewBox="0 0 17 11" aria-hidden="true"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111"/></svg>
+    <svg width="25" height="12" viewBox="0 0 25 12" aria-hidden="true"><rect x=".5" y=".5" width="21" height="11" rx="3" fill="none" stroke="#111" opacity=".5"/><rect x="2" y="2" width="15" height="8" rx="1.8" fill="#111"/><rect x="22.5" y="4" width="2" height="4" rx="1" fill="#111" opacity=".5"/></svg>
+  </span></div>
+
+  <div class="chat-head">
+    <button class="icon-btn" aria-label="Volver"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="avatar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h13v5a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6V9z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3.5c0 1.2-1 1.3-1 2.5M12 3.5c0 1.2-1 1.3-1 2.5"/></svg></div>
+    <div class="who">
+      <div class="name">Café NTT DATA <svg width="16" height="16" viewBox="0 0 24 24" aria-label="Cuenta verificada"><path fill="#25D366" d="M12 1.8l2.6 1.9 3.2-.2 1 3 2.6 1.9-1 3.1 1 3.1-2.6 1.9-1 3-3.2-.2L12 22.2l-2.6-1.9-3.2.2-1-3L2.6 15.6l1-3.1-1-3.1 2.6-1.9 1-3 3.2.2z"/><path d="M8 12.2l2.7 2.7L16.2 9.4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="sub" id="sub">Cuenta de empresa</div>
+    </div>
+    <button class="icon-btn" aria-label="Videollamada"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></svg></button>
+    <button class="icon-btn" aria-label="Llamar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16.5v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 2.5 5.2 2 2 0 0 1 4.5 3h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.5 10.8a16 16 0 0 0 4.7 4.7l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></button>
+    <button class="icon-btn" id="btn-menu" aria-label="Más opciones"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+  </div>
+  <div class="menu" id="menu">
+    <button id="m-notif" type="button">Activar notificaciones</button>
+    <button id="m-cambiar" type="button">Cambiar de número</button>
+  </div>
+
+  <div class="chat" id="chat" aria-live="polite">
+    <div class="biz-card">
+      <div class="avatar"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h13v5a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6V9z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3.5c0 1.2-1 1.3-1 2.5M12 3.5c0 1.2-1 1.3-1 2.5"/></svg></div>
+      <b>Café NTT DATA</b>
+      <span>Cuenta de empresa</span>
+    </div>
+    <div class="sys">Este chat es con una cuenta de empresa. Te escribirá solo para avisarte el estado de tu turno del café.</div>
+    <div class="demo-tag">WhatsApp simulado · demo NTT DATA</div>
+    <div class="day">Hoy</div>
+    <div id="mensajes"></div>
+  </div>
+
+  <div class="offline" id="offline">Conectando…</div>
+
+  <div class="solo-avisos">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#667781" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+    Este chat solo te envía avisos de tu turno del café.
+  </div>
+
+  <div class="push" id="push" role="status">
+    <div class="app"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.7-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg></div>
+    <div class="txt"><div class="top"><b>Café NTT DATA</b><span>ahora</span></div><div class="body" id="push-body"></div></div>
+  </div>
+
+  <div class="setup" id="setup">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.7-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
+    <h2>WhatsApp simulado</h2>
+    <p>Escribe el número con el que te registraste en la app de NTT DATA. Aquí llegarán los avisos de tu turno.</p>
+    <div class="row"><select id="s-pais" aria-label="Código de país"></select><input id="s-tel" type="tel" inputmode="numeric" placeholder="999 999 999"></div>
+    <div class="err" id="s-err"></div>
+    <button id="s-ok" type="button">Abrir chat</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  const cfg = window.NATTALIA;
+  const api = window.nattaliaApi;
+  const $ = id => document.getElementById(id);
+  const CLAVE = 'nattalia_wa_tel';
+  const TIPOS_AVISO = ['posicion', 'ya_casi', 'turno', 'alerta', 'no_asistio', 'listo'];
+  let tel = '';
+  let avisos = [];
+  let vistos = null;
+  let timer = null;
+
+  const guardar = v => { try { v ? localStorage.setItem(CLAVE, v) : localStorage.removeItem(CLAVE); } catch (e) {} };
+  const leer = () => { try { return localStorage.getItem(CLAVE) || ''; } catch (e) { return ''; } };
+  const hhmm = f => { const m = String(f || '').match(/(\d{2}):(\d{2})/); return m ? m[1] + ':' + m[2] : ''; };
+  const clave = m => m.fecha + '|' + m.tipo + '|' + m.texto;
+  const reloj = () => { const d = new Date(); $('hora').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  reloj(); setInterval(reloj, 15000);
+
+  cfg.paises.forEach(p => { const o = document.createElement('option'); o.value = p.codigo; o.textContent = p.etiqueta; $('s-pais').appendChild(o); });
+
+  function render(animarDesde) {
+    const cont = $('mensajes');
+    const chat = cont.parentElement;
+    cont.innerHTML = '';
+    avisos.forEach((m, i) => {
+      const div = document.createElement('div');
+      div.className = 'msg in' + (i === 0 ? ' first' : '') + (animarDesde != null && i >= animarDesde ? ' nuevo' : '');
+      div.textContent = m.texto;
+      const meta = document.createElement('span');
+      meta.className = 'meta';
+      meta.textContent = hhmm(m.fecha);
+      div.appendChild(meta);
+      cont.appendChild(div);
+    });
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function sonar() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, .13].forEach((t, i) => { const o = ctx.createOscillator(); const g = ctx.createGain(); o.frequency.value = i ? 1320 : 990; g.gain.setValueAtTime(.0001, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(.18, ctx.currentTime + t + .02); g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + t + .18); o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + .2); });
+    } catch (e) {}
+    try { navigator.vibrate && navigator.vibrate([120, 60, 120]); } catch (e) {}
+  }
+
+  let pushTimer = null;
+  function notificar(m) {
+    $('push-body').textContent = m.texto;
+    $('push').classList.toggle('turno', m.tipo === 'turno');
+    $('push').classList.add('show');
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => $('push').classList.remove('show'), m.tipo === 'turno' ? 9000 : 5500);
+    sonar();
+    try { if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('Café NTT DATA', { body: m.texto }); } catch (e) {}
+    if (document.hidden) document.title = '(1) WhatsApp · Café NTT DATA';
+  }
+  $('push').addEventListener('click', () => { $('push').classList.remove('show'); $('chat').scrollTop = $('chat').scrollHeight; });
+
+  async function consultar() {
+    if (!tel) return;
+    try {
+      const r = await api('/movil', { query: { whatsapp: tel } });
+      $('offline').classList.remove('show');
+      const lista = (r.mensajes || [])
+        .filter(m => m.direccion === 'saliente' && TIPOS_AVISO.includes(m.tipo))
+        .sort((a, b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0);
+      if (vistos === null) {
+        vistos = new Set(lista.map(clave));
+        avisos = lista;
+        render();
+        return;
+      }
+      const nuevos = lista.filter(m => !vistos.has(clave(m)));
+      if (!nuevos.length) return;
+      nuevos.forEach(m => vistos.add(clave(m)));
+      avisos = lista;
+      render(lista.length - nuevos.length);
+      notificar(nuevos[nuevos.length - 1]);
+    } catch (e) {
+      $('offline').textContent = 'Sin conexión, reintentando…';
+      $('offline').classList.add('show');
+    }
+  }
+
+  function programar() {
+    clearTimeout(timer);
+    timer = setTimeout(async () => { if (!document.hidden) await consultar(); programar(); }, cfg.refrescoMs);
+  }
+
+  function abrir(numero) {
+    tel = String(numero || '').replace(/\D/g, '');
+    if (!tel) { $('setup').classList.remove('hidden'); return; }
+    guardar(tel);
+    $('setup').classList.add('hidden');
+    avisos = []; vistos = null;
+    render();
+    consultar().then(programar);
+  }
+
+  function cerrar() { clearTimeout(timer); tel = ''; guardar(''); avisos = []; vistos = null; $('mensajes').innerHTML = ''; $('setup').classList.remove('hidden'); }
+
+  $('s-ok').addEventListener('click', () => {
+    const pais = $('s-pais').value;
+    const local = $('s-tel').value.replace(/\D/g, '').replace(/^0+/, '');
+    if (local.length < 6) { $('s-err').textContent = 'Revisa el número.'; return; }
+    $('s-err').textContent = '';
+    abrir(pais + local);
+  });
+
+  $('btn-menu').addEventListener('click', e => { e.stopPropagation(); $('menu').classList.toggle('show'); });
+  document.addEventListener('click', () => $('menu').classList.remove('show'));
+  $('m-cambiar').addEventListener('click', cerrar);
+  $('m-notif').addEventListener('click', () => { try { Notification.requestPermission(); } catch (e) {} });
+
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { document.title = 'WhatsApp (simulado) · Café NTT DATA'; consultar(); } });
+  window.addEventListener('message', ev => {
+    const d = ev.data || {};
+    if (d.tipo === 'registrado') abrir(d.tel);
+    if (d.tipo === 'reiniciar') cerrar();
+  });
+
+  const p = new URLSearchParams(location.search);
+  const inicial = p.get('tel') || leer();
+  if (inicial) abrir(inicial); else $('setup').classList.remove('hidden');
+})();
+</script>
+</body>
+</html>

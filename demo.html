@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nattalia Café · Demo móvil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #070F26; --blue: #0072BC; --blue-dark: #005B96; --bg: #E9EEF4; --ink: #070F26; --ink-2: #2E404D; --ink-3: #4A5D6E; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: 'Manrope', system-ui, sans-serif; color: var(--ink); background: var(--bg); min-height: 100vh; }
+  .top { background: var(--navy); color: #fff; display: flex; align-items: center; gap: 18px; padding: 14px 28px; flex-wrap: wrap; }
+  .top img { width: 110px; display: block; }
+  .top h1 { margin: 0; font-size: 17px; font-weight: 700; flex: 1; min-width: 200px; }
+  .top h1 span { color: #8FB8DE; font-weight: 500; }
+  .top button { height: 38px; border-radius: 10px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; font: inherit; font-size: 14px; font-weight: 700; padding: 0 16px; cursor: pointer; }
+  .top button:hover { background: rgba(255,255,255,.1); }
+  .stage { display: flex; justify-content: center; align-items: flex-start; gap: 48px; padding: 28px 16px 40px; flex-wrap: wrap; }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .label { text-align: center; max-width: 360px; }
+  .label b { display: block; font-size: 15px; }
+  .label span { font-size: 13px; color: var(--ink-3); line-height: 1.45; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--blue-dark); background: #fff; border-radius: 999px; padding: 4px 10px; margin-bottom: 6px; }
+  .device { --s: 1; width: calc(410px * var(--s)); height: calc(864px * var(--s)); position: relative; }
+  .device .shell { position: absolute; top: 0; left: 0; width: 410px; height: 864px; transform: scale(var(--s)); transform-origin: top left; border-radius: 54px; background: #0B0F17; padding: 10px; box-shadow: 0 30px 60px rgba(7,15,38,.28), inset 0 0 0 2px #2A3140; transition: box-shadow .4s; }
+  .device.alerta .shell { box-shadow: 0 0 0 6px rgba(37,211,102,.55), 0 30px 60px rgba(7,15,38,.28), inset 0 0 0 2px #2A3140; }
+  .device iframe { width: 390px; height: 844px; border: 0; border-radius: 44px; background: #fff; display: block; }
+  .notch { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 110px; height: 28px; border-radius: 16px; background: #0B0F17; z-index: 2; pointer-events: none; }
+  .flow { max-width: 900px; margin: 0 auto 36px; padding: 0 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .flow div { background: #fff; border-radius: 12px; padding: 14px 16px; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+  .flow b { display: block; color: var(--ink); font-size: 13.5px; margin-bottom: 3px; }
+  .flow i { font-style: normal; color: var(--blue-dark); font-weight: 800; margin-right: 6px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <img src="ntt-data-logo.png" alt="NTT DATA">
+    <h1>Nattalia Café <span>· Recorrido móvil del asistente</span></h1>
+    <button id="reiniciar" type="button">Reiniciar demo</button>
+  </div>
+
+  <div class="stage">
+    <div class="col">
+      <div class="label"><div class="tag">1A · 1B</div><b>App NTT DATA en el celular</b><span>Escanea el QR, se registra y ve su número de turno y su posición en vivo.</span></div>
+      <div class="device" id="d-registro"><div class="shell"><div class="notch"></div><iframe id="f-registro" src="registro.html" title="Registro en la cola"></iframe></div></div>
+    </div>
+    <div class="col">
+      <div class="label"><div class="tag">1C</div><b>WhatsApp del asistente (simulado)</b><span>Solo recibe los avisos del estado de su turno.</span></div>
+      <div class="device" id="d-wa"><div class="shell"><div class="notch"></div><iframe id="f-wa" src="whatsapp.html" title="WhatsApp simulado"></iframe></div></div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div><b><i>1</i>Registro en la app</b>El asistente deja nombre y WhatsApp. Queda en la hoja cola como <em>en_espera</em> y ve su número de turno.</div>
+    <div><b><i>2</i>Ya casi</b>Cuando entra a las posiciones 3 o 4, le llega por WhatsApp que en unos 2 minutos es su turno.</div>
+    <div><b><i>3</i>Es tu turno</b>En las posiciones 1 o 2 pasa a <em>llamado</em> y le llega el aviso para acercarse a Nattalia.</div>
+    <div><b><i>4</i>Pedido</b>Cuando Nattalia registra el pedido, el turno pasa a <em>atendido</em> y la cola avanza sola.</div>
+  </div>
+
+<script>
+(function () {
+  const fr = document.getElementById('f-registro');
+  const fw = document.getElementById('f-wa');
+  const devs = document.querySelectorAll('.device');
+
+  function escalar() {
+    const alto = window.innerHeight - 190;
+    const ancho = window.innerWidth < 900 ? window.innerWidth - 32 : (window.innerWidth - 120) / 2;
+    const s = Math.max(.5, Math.min(1, alto / 864, ancho / 410));
+    devs.forEach(d => d.style.setProperty('--s', s.toFixed(3)));
+  }
+  window.addEventListener('resize', escalar); escalar();
+
+  window.addEventListener('message', ev => {
+    const d = ev.data || {};
+    if (ev.source === fr.contentWindow && d.tipo === 'registrado') {
+      fw.contentWindow.postMessage(d, '*');
+      const w = document.getElementById('d-wa');
+      w.classList.add('alerta'); setTimeout(() => w.classList.remove('alerta'), 2200);
+    }
+  });
+
+  document.getElementById('reiniciar').addEventListener('click', () => {
+    try { localStorage.removeItem('nattalia_registro'); localStorage.removeItem('nattalia_wa_tel'); } catch (e) {}
+    fr.src = 'registro.html?nuevo=1';
+    fw.src = 'whatsapp.html';
+  });
+})();
+</script>
+</body>
+</html>
